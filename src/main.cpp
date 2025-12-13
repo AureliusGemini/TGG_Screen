@@ -126,7 +126,7 @@ void setup()
   ui_init();
 
   // ATTACH BUTTON EVENT
-  // [COMMENTED OUT] Enable this after you check ui.h for the real name
+  // TODO: Check src/ui/ui.h for the real button name (e.g. ui_btnPump) and uncomment this block
   /*
   if (ui_Button1 != NULL) {
       lv_obj_add_event_cb(ui_Button1, pump_button_event_handler, LV_EVENT_ALL, NULL);
@@ -158,7 +158,7 @@ void loop()
         end = data.length();
       String val = data.substring(idxT + 2, end);
 
-      // [COMMENTED OUT] Enable this after you check ui.h
+      // TODO: Check src/ui/ui.h for real Temp Label name and uncomment
       // if (ui_Label1 != NULL) lv_label_set_text(ui_Label1, (val + " C").c_str());
     }
 
@@ -171,7 +171,7 @@ void loop()
         end = data.length();
       String val = data.substring(idxH + 2, end);
 
-      // [COMMENTED OUT] Enable this after you check ui.h
+      // TODO: Check src/ui/ui.h for real Humid Label name and uncomment
       // if (ui_Label2 != NULL) lv_label_set_text(ui_Label2, (val + " %").c_str());
     }
   }
