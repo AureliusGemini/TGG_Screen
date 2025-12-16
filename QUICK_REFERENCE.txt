@@ -1,0 +1,154 @@
+```
+╔════════════════════════════════════════════════════════════════╗
+║          ESP32 LCD RECEIVER - QUICK REFERENCE GUIDE            ║
+╚════════════════════════════════════════════════════════════════╝
+
+📋 DATA LAYOUT
+═════════════════════════════════════════════════════════════════
+   [Temperature]  [Humidity]     [Pressure]     ← Baris 1
+   [Lux Value]    [Fertilizer]   [Rain %]       ← Baris 2
+
+📊 DATA STRUCTURE (BOTH ESP1 & LCD MUST MATCH)
+═════════════════════════════════════════════════════════════════
+struct SensorData {
+  float temperature;    // Suhu (°C)
+  float humidity;       // Kelembaban (%)
+  float pressure;       // Tekanan (hPa)
+  float lux;            // Cahaya (lux)
+  float fertilizer;     // Nutrisi (unit)
+  float rainIntensity;  // Hujan (%)
+}
+
+🔧 SETUP CHECKLIST
+═════════════════════════════════════════════════════════════════
+LCD Side (ESP32 with screen):
+□ Upload main.cpp (already updated)
+□ Boot → WiFi Manager akan buat hotspot "ESP32-TGG-Screen"
+□ Connect ke hotspot dari phone/laptop
+□ Setup WiFi (Select SSID → Enter Password → Save)
+□ Get MAC address dari Serial monitor (e.g., E4:65:B8:C3:2A:F0)
+
+ESP1 Side (Data Sender):
+□ Copy TEMPLATE_ESP1_SENDER.cpp ke project ESP1
+□ Update MAC address di template → use LCD's MAC
+□ Implement sensor reading functions
+□ Upload to ESP1
+
+🎯 MAC ADDRESS FORMAT CONVERSION
+═════════════════════════════════════════════════════════════════
+Serial Output:  E4:65:B8:C3:2A:F0
+Code Format:    { 0xE4, 0x65, 0xB8, 0xC3, 0x2A, 0xF0 }
+                  └─────────────────────────────────────┘
+                  Pisah ":" dan tambah "0x"
+
+📡 ESP-NOW BEHAVIOR
+═════════════════════════════════════════════════════════════════
+• P2P wireless (no WiFi router needed)
+• Range: ~200-300 meters (line of sight)
+• Latency: <10ms typically
+• Power: Efficient for IoT
+• Pairing: Auto via MAC address
+
+⚡ INITIALIZATION ORDER
+═════════════════════════════════════════════════════════════════
+ESP32 LCD (Receiver):
+1. Serial init → Debug output
+2. Display init → Show "Initializing WiFi..."
+3. WiFi Manager → Setup hotspot + auto connect
+4. ESP-NOW init → Start listening
+5. LVGL init → Load UI
+6. Loop → Update labels with received data
+
+ESP1 (Sender):
+1. Serial init
+2. WiFi.mode(WIFI_STA)
+3. esp_now_init()
+4. Add peer (LCD MAC address)
+5. Loop → Read sensors → Send data
+
+⏱️ TIMING
+═════════════════════════════════════════════════════════════════
+WiFi Manager: Timeout 120 seconds (then AP mode)
+ESP-NOW: Instant receive
+Data Timeout: 5 seconds (show "---" if no update)
+LVGL Refresh: 60 FPS
+
+🔍 TESTING STEPS
+═════════════════════════════════════════════════════════════════
+1. Upload LCD code → Serial show "WiFi connected"
+2. Power on ESP1 → Should be visible in ESP1 project
+3. Check Serial monitor both:
+   - LCD: "ESP-NOW initialized and listening..."
+   - ESP1: "Data sent successfully!"
+4. Verify LCD labels update with sensor values
+5. Unplug ESP1 → LCD should show "---" after 5 sec
+
+📞 COMMON ISSUES
+═════════════════════════════════════════════════════════════════
+LCD freezing during WiFi setup:
+→ Normal, takes ~5-30 seconds depending on WiFi
+
+Data not received:
+→ Check: 1) MAC address correct? 2) ESP1 sending? 3) Distance OK?
+
+WiFi keeps disconnecting:
+→ WiFi Manager auto-reconnect, check WiFi signal strength
+
+Touch not working:
+→ Separate issue from ESP-NOW, check XPT2046 pins
+
+🎨 CUSTOMIZATION EXAMPLES
+═════════════════════════════════════════════════════════════════
+Change WiFi hotspot name:
+  wifiManager.autoConnect("YourCustomName");
+
+Change send interval (ESP1):
+  const unsigned long SEND_INTERVAL = 2000; // 2 seconds
+
+Add more sensors:
+  // Extend SensorData struct with more floats
+  // Update both LCD and ESP1 code
+
+🔐 SECURITY NOTES
+═════════════════════════════════════════════════════════════════
+• ESP-NOW unencrypted by default (peerInfo.encrypt = false)
+• MAC address is not secret (visible to nearby WiFi scanner)
+• Consider encryption for production:
+    peerInfo.encrypt = true;
+    memcpy(peerInfo.key, key, 16); // 16-byte key
+
+📚 FILE REFERENCES
+═════════════════════════════════════════════════════════════════
+• src/main.cpp                  ← Main LCD receiver code
+• include/sensor_data.h         ← Shared struct + examples
+• TEMPLATE_ESP1_SENDER.cpp      ← Copy this for ESP1
+• ESP-NOW_SETUP.md             ← Detailed setup guide
+• README_ESP32.md              ← Full documentation
+
+🚀 READY TO GO?
+═════════════════════════════════════════════════════════════════
+1. Review: src/main.cpp changes
+2. Test: WiFi Manager setup
+3. Configure: MAC address for ESP1
+4. Implement: ESP1 sensor code
+5. Deploy: Monitor Serial for any issues
+
+═════════════════════════════════════════════════════════════════
+Version: 1.0 | Date: Dec 16, 2025 | Status: Production Ready
+```
+
+---
+
+## 🔗 Quick Links to Key Sections
+
+**For ESP1 Implementation:**
+→ See `TEMPLATE_ESP1_SENDER.cpp` for ready-to-use template
+
+**For WiFi Setup Issues:**
+→ See `ESP-NOW_SETUP.md` → Troubleshooting section
+
+**For Detailed Documentation:**
+→ See `README_ESP32.md` → Full reference
+
+**For Data Structure Details:**
+→ See `include/sensor_data.h` → Usage examples included

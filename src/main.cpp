@@ -4,6 +4,9 @@
 #include <SPI.h>
 #include <lvgl.h>
 #include <HardwareSerial.h>
+#include <WiFi.h>
+#include <esp_now.h>
+#include <WiFiManager.h>
 #include "ui/ui.h" // Links to your src/ui folder
 
 // ==========================================
@@ -27,7 +30,24 @@ SPIClass mySpi = SPIClass(SPI);
 XPT2046_Touchscreen ts(XPT_CS, XPT_IRQ);
 
 // ==========================================
-// 2. UART SETUP (To Waveshare Hub)
+// 2. ESP-NOW DATA STRUCTURE
+// ==========================================
+typedef struct
+{
+  float temperature;   // Baris 1, Kolom 1
+  float humidity;      // Baris 1, Kolom 2
+  float pressure;      // Baris 1, Kolom 3
+  float lux;           // Baris 2, Kolom 1
+  float fertilizer;    // Baris 2, Kolom 2
+  float rainIntensity; // Baris 2, Kolom 3
+} SensorData;
+
+SensorData receivedData = {0, 0, 0, 0, 0, 0};
+unsigned long lastDataTime = 0;
+const unsigned long DATA_TIMEOUT = 5000; // 5 detik timeout
+
+// ==========================================
+// 3. UART SETUP (To Waveshare Hub)
 // ==========================================
 HardwareSerial &UartHub = Serial2;
 #define HUB_RX_PIN 18
@@ -66,6 +86,22 @@ void my_touch_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 // ==========================================
 // 4. BUTTON LOGIC (Defined but unused for now)
 // ==========================================
+
+// ESP-NOW Receive Callback
+void onDataReceived(const uint8_t *mac_addr, const uint8_t *incomingData, int len)
+{
+  if (len == sizeof(SensorData))
+  {
+    memcpy(&receivedData, incomingData, sizeof(SensorData));
+    lastDataTime = millis();
+    Serial.println("ESP-NOW Data Received:");
+    Serial.printf("  Temp: %.2f°C, Humid: %.2f%%, Pressure: %.2f hPa\n",
+                  receivedData.temperature, receivedData.humidity, receivedData.pressure);
+    Serial.printf("  Lux: %.2f, Fertilizer: %.2f, Rain: %.2f%%\n",
+                  receivedData.lux, receivedData.fertilizer, receivedData.rainIntensity);
+  }
+}
+
 static void pump_button_event_handler(lv_event_t *e)
 {
   lv_event_code_t code = lv_event_get_code(e);
@@ -87,14 +123,50 @@ static void pump_button_event_handler(lv_event_t *e)
 }
 
 // ==========================================
-// 5. SETUP
+// 5. UI UPDATE FUNCTION
+// ==========================================
+void updateSensorDisplay()
+{
+  // Baris 1: Temp, Humidity, Pressure
+  if (ui_Label1 != NULL)
+  {
+    char buff1[32];
+    sprintf(buff1, "%.1f°C", receivedData.temperature);
+    lv_label_set_text(ui_Label1, buff1);
+  }
+
+  if (ui_Label2 != NULL)
+  {
+    char buff2[32];
+    sprintf(buff2, "%.1f%%", receivedData.humidity);
+    lv_label_set_text(ui_Label2, buff2);
+  }
+
+  if (ui_Label3 != NULL)
+  {
+    char buff3[32];
+    sprintf(buff3, "%.1f hPa", receivedData.pressure);
+    lv_label_set_text(ui_Label3, buff3);
+  }
+
+  // Baris 2: Lux, Fertilizer, Rain Intensity
+  // NOTE: Jika UI tidak memiliki Label4-6, buat tambahan atau gunakan Panel untuk text
+  // Untuk sekarang, gunakan Serial untuk debugging
+  Serial.printf("Row2 - Lux: %.2f, Fert: %.2f, Rain: %.2f%%\n",
+                receivedData.lux, receivedData.fertilizer, receivedData.rainIntensity);
+}
+
+// ==========================================
+// 6. SETUP
 // ==========================================
 void setup()
 {
   Serial.begin(115200);                                      // USB Debug
   UartHub.begin(115200, SERIAL_8N1, HUB_RX_PIN, HUB_TX_PIN); // UART to Hub
 
-  // Init Display & Touch
+  // ==========================================
+  // INITIALIZE DISPLAY & TOUCH
+  // ==========================================
   gfx->begin();
   gfx->fillScreen(BLACK);
   pinMode(TFT_BL, OUTPUT);
@@ -103,7 +175,53 @@ void setup()
   ts.begin(mySpi);
   ts.setRotation(1);
 
-  // Init LVGL
+  // Display loading message
+  gfx->setTextColor(WHITE);
+  gfx->setTextSize(2);
+  gfx->setCursor(50, 130);
+  gfx->println("Initializing WiFi...");
+
+  // ==========================================
+  // INITIALIZE WIFI MANAGER
+  // ==========================================
+  WiFiManager wifiManager;
+
+  // Uncomment to reset WiFi settings for testing
+  // wifiManager.resetSettings();
+
+  // Set AP name and password
+  wifiManager.autoConnect("ESP32-TGG-Screen");
+
+  Serial.println("\n\nWiFi connected!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Update display
+  gfx->fillScreen(BLACK);
+  gfx->setCursor(50, 130);
+  gfx->println("WiFi Connected!");
+  delay(1000);
+
+  // ==========================================
+  // INITIALIZE ESP-NOW
+  // ==========================================
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("Error initializing ESP-NOW");
+    gfx->fillScreen(BLACK);
+    gfx->setCursor(50, 130);
+    gfx->println("ESP-NOW Init Failed!");
+    while (1)
+      delay(1000);
+  }
+
+  // Register receive callback
+  esp_now_register_recv_cb(onDataReceived);
+  Serial.println("ESP-NOW initialized and listening for data...");
+
+  // ==========================================
+  // INITIALIZE LVGL
+  // ==========================================
   lv_init();
   disp_draw_buf = (lv_color_t *)heap_caps_malloc(sizeof(lv_color_t) * 480 * 30, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   lv_disp_draw_buf_init(&draw_buf, disp_draw_buf, NULL, 480 * 30);
@@ -135,19 +253,37 @@ void setup()
 }
 
 // ==========================================
-// 6. LOOP
+// 7. LOOP
 // ==========================================
 void loop()
 {
   lv_timer_handler(); // Refresh UI
 
-  // Check for incoming data from Hub
+  // Update sensor display from ESP-NOW data
+  unsigned long currentTime = millis();
+  if (currentTime - lastDataTime < DATA_TIMEOUT)
+  {
+    // Data still valid, update display
+    updateSensorDisplay();
+  }
+  else if (lastDataTime > 0)
+  {
+    // Data timeout - show "No Signal"
+    if (ui_Label1 != NULL)
+      lv_label_set_text(ui_Label1, "---");
+    if (ui_Label2 != NULL)
+      lv_label_set_text(ui_Label2, "---");
+    if (ui_Label3 != NULL)
+      lv_label_set_text(ui_Label3, "---");
+  }
+
+  // Check for incoming data from Hub (optional UART fallback)
   if (UartHub.available())
   {
     String data = UartHub.readStringUntil('\n');
     data.trim();
     if (data.length() > 0)
-      Serial.println("RX: " + data);
+      Serial.println("RX UART: " + data);
 
     // -- PARSE TEMP --
     int idxT = data.indexOf("T=");
