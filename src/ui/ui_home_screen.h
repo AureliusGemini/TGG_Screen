@@ -7,40 +7,53 @@
 #define UI_HOME_SCREEN_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-// SCREEN: ui_home_screen
-extern void ui_home_screen_screen_init(void);
-extern void ui_home_screen_screen_destroy(void);
-extern lv_obj_t * ui_home_screen;
-extern lv_obj_t * ui_Roller1;
-extern lv_obj_t * ui_Image3;
-extern lv_obj_t * ui_Chart1;
-extern lv_obj_t * ui_Panel4;
-extern lv_obj_t * ui_Panel1;
-extern lv_obj_t * ui_Panel2;
-extern lv_obj_t * ui_Panel3;
-extern lv_obj_t * ui_Label1;
-extern lv_obj_t * ui_Label2;
-extern lv_obj_t * ui_Label3;
-extern lv_obj_t * ui_Panel5;
-extern lv_obj_t * ui_Panel6;
-extern lv_obj_t * ui_Panel7;
-extern lv_obj_t * ui_Panel9;
-extern lv_obj_t * ui_Panel8;
-extern lv_obj_t * ui_Panel10;
-// CUSTOM VARIABLES
-extern lv_obj_t * uic_Roller1;
-extern lv_obj_t * uic_Image3;
-extern lv_obj_t * uic_Chart1;
-extern lv_obj_t * uic_Panel4;
-extern lv_obj_t * uic_Label1;
-extern lv_obj_t * uic_Label3;
+    // SCREEN: ui_home_screen
+    extern void ui_home_screen_screen_init(void);
+    extern void ui_home_screen_screen_destroy(void);
+    extern lv_obj_t *ui_home_screen;
+    extern lv_obj_t *ui_Roller1;
+    extern lv_obj_t *ui_Image3;
+    extern lv_obj_t *ui_Chart1;
+    extern lv_obj_t *ui_Panel4;
+    extern lv_obj_t *ui_Panel1;
+    extern lv_obj_t *ui_Panel2;
+    extern lv_obj_t *ui_Panel3;
+    extern lv_obj_t *ui_Label1;
+    extern lv_obj_t *ui_Label2;
+    extern lv_obj_t *ui_Label3;
+    extern lv_obj_t *ui_Panel5;
+    extern lv_obj_t *ui_Panel6;
+    extern lv_obj_t *ui_Panel7;
+    extern lv_obj_t *ui_Panel9;
+    extern lv_obj_t *ui_Panel8;
+    extern lv_obj_t *ui_Panel10;
+    // ---- Added: Cards' title and value labels ----
+    extern lv_obj_t *ui_TitleTemp;       // A1 title
+    extern lv_obj_t *ui_ValueTemp;       // A1 value
+    extern lv_obj_t *ui_TitleHumidity;   // A2 title
+    extern lv_obj_t *ui_ValueHumidity;   // A2 value
+    extern lv_obj_t *ui_TitlePressure;   // A3 title
+    extern lv_obj_t *ui_ValuePressure;   // A3 value
+    extern lv_obj_t *ui_TitleLux;        // B1 title
+    extern lv_obj_t *ui_ValueLux;        // B1 value
+    extern lv_obj_t *ui_TitleRain;       // B2 title
+    extern lv_obj_t *ui_ValueRain;       // B2 value
+    extern lv_obj_t *ui_TitleFertilizer; // B3 title
+    extern lv_obj_t *ui_ValueFertilizer; // B3 value
+    // CUSTOM VARIABLES
+    extern lv_obj_t *uic_Roller1;
+    extern lv_obj_t *uic_Image3;
+    extern lv_obj_t *uic_Chart1;
+    extern lv_obj_t *uic_Panel4;
+    extern lv_obj_t *uic_Label1;
+    extern lv_obj_t *uic_Label3;
 
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif
 
 #endif
-
